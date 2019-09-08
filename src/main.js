@@ -1,54 +1,69 @@
+// 找到要执行的核心文件
+// 1. 要解析用户的参数
+const path = require('path');
 const program = require('commander');
-const path = require('path')
-const { name, version } = require('./utils/constants')
+const { version } = require('./constants');
 
-const actionsMap = {
-    create: {
-        description: 'create project',
-        alias: 'cr',
-        examples: [
-            'one-cli create <template-name>'
-        ]
-    },
-    config: {
-        description: 'config info',
-        alias: 'c',
-        examples: [
-            'one-cli config get <k>',
-            'one-cli config set <k> <v>'
-        ]
-    },
-    '*': {
-        description: 'command not found'
-    }
-}
+const mapActions = {
+  create: {
+    alias: 'c',
+    description: 'create a project',
+    examples: [
+      'yui-cli create <project-name>',
+    ],
+  },
+  config: {
+    alias: 'conf',
+    description: 'config project veriable',
+    examples: ['yui-cli config set <k> <v>',
+      'yui-cli config get <k>'],
+  },
+  '*': {
+    alias: '',
+    description: 'command not found',
+    examples: [],
+  },
+};
 
-Object.keys(actionsMap).forEach(action => {
-    program
-    .command(action)
-    .alias(actionsMap[action].alias)
-    .description(actionsMap[action].description)
+
+Reflect.ownKeys(mapActions).forEach((key) => {
+  const val = mapActions[key];
+  program
+    .command(key)
+    .alias(val.alias)
+    .description(val.description)
     .action(() => {
-        // 动作
-        if(action === '*') {
-            console.log(actionsMap[action].description)
-        } else {
-            require(path.resolve(__dirname, action))(...process.argv.slice(3))
-        }
-        // console.log('执行动作', action)
-    })
-})
+      if (key === '*') { // 访问不到命令
+        console.log(val.description);
+      } else {
+        // eslint-disable-next-line
+        require(path.resolve(__dirname, key))(...process.argv.slice(3));
+      }
+    });
+});
 
+// 监听用户help 事件
 program.on('--help', () => {
-    console.log('Examples');
-    Object.keys(actionsMap).forEach(action => {
-        (actionsMap[action].examples|| []).forEach(example => {
-            console.log(example)
-        })
-    })
-})
+  console.log('\nExamples:\r\r');
+  Reflect.ownKeys(mapActions).forEach((key) => {
+    const val = mapActions[key];
+    val.examples.forEach((example) => {
+      console.log(` ${example}`);
+    });
+    console.log('');
+  });
+});
 
-// console.log(name, version)
+// program
+//   .command('create') // 配置命令的名称
+//   .alias('c') // 配置命令的别名
+//   .description('create a project') // 配置命令的描述
+//   .action(() => { // 配置命令执行的动作
+//     console.log('create');
+//   });
 
-program.version(version)
-    .parse(process.argv)
+// 先配置命令-然后解析命令
+// 解析用户传递过来的参数
+program
+  .version(version)
+  .parse(process.argv);
